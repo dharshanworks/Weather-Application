@@ -28,3 +28,7 @@ A simple and responsive **Weather Application** built using **HTML, CSS, and Jav
 ---
 
 ## 📂 Project Structure
+Weather-App/
+│── index.html
+│── style.css
+│── script.js
