@@ -1,0 +1,297 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Weather Dashboard - Climatic</title>
+        <link rel="stylesheet" href="style.css">
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+        <style>
+            .loading-state {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                min-height: 200px;
+            }
+
+            .loading-spinner {
+                width: 40px;
+                height: 40px;
+                border: 3px solid var(--border-color);
+                border-top: 3px solid var(--primary-color);
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+                margin-bottom: 1rem;
+            }
+
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+
+            .error-state {
+                text-align: center;
+                min-height: 200px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .weather-description {
+                text-transform: capitalize;
+                font-size: 1.1rem;
+                margin: 1rem 0;
+                color: var(--text-color-light);
+            }
+
+            .weather-details {
+                margin-top: 1rem;
+                padding-top: 1rem;
+                border-top: 1px solid var(--border-color);
+            }
+
+            .weather-details p {
+                margin: 0.5rem 0;
+                color: var(--text-color-light);
+            }
+
+            .metric-value {
+                font-size: 2.5rem;
+                font-weight: 700;
+                color: var(--primary-color);
+                text-align: center;
+                margin: 1rem 0;
+            }
+
+            .metric-bar {
+                width: 100%;
+                height: 8px;
+                background: var(--border-color);
+                border-radius: 4px;
+                overflow: hidden;
+                margin-top: 1rem;
+            }
+
+            .metric-fill {
+                height: 100%;
+                background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+                border-radius: 4px;
+                transition: width 1s ease;
+            }
+
+            .wind-direction {
+                text-align: center;
+                margin-top: 1rem;
+            }
+
+            .wind-direction i {
+                font-size: 2rem;
+                color: var(--accent-color);
+                transition: transform 0.5s ease;
+            }
+
+            .time-value {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+                font-size: 1.5rem;
+                font-weight: 600;
+                margin: 1rem 0;
+            }
+
+            .sunrise-icon {
+                color: #ffa726;
+            }
+
+            .sunset-icon {
+                color: #ff7043;
+            }
+
+            .bento-box h2 {
+                margin-bottom: 1rem;
+                color: var(--text-color);
+            }
+
+            .bento-box h3 {
+                margin-bottom: 1rem;
+                color: var(--text-color);
+                font-size: 1.2rem;
+            }
+        </style>
+    </head>
+    <body id="page-app">
+        <div class="preloader">
+            <div class="preloader-text typewriter">Climatic</div>
+        </div>
+        <div class="aurora-bg"></div>
+        <div class="cursor-light"></div>
+        <header class="main-header app-header">
+            <nav class="navbar">
+                <div class="logo">Climatic</div>
+                <div class="nav-actions">
+                    <button class="theme-toggle" id="theme-toggle-button">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <a href="index.html" class="cta-button secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        Back to Home
+                    </a>
+                </div>
+            </nav>
+        </header>
+
+        <main style="padding: 2rem 5%;">
+            
+            <section class="section-header">
+                <input type="text" id="city-input" placeholder="Enter a city to begin...">
+                <button class="cta-button primary" id="search-button">
+                    <i class="fas fa-search"></i>
+                </button>
+            </section>
+
+            <div class="suggested-cities">
+                <span class="city-chip">New York</span>
+                <span class="city-chip">London</span>
+                <span class="city-chip">Tokyo</span>
+                <span class="city-chip">Paris</span>
+                <span class="city-chip">Mumbai</span>
+                <span class="city-chip">Sydney</span>
+            </div>
+
+            <section class="bento-grid" id="weather-dashboard">
+                <div class="bento-box loading-state">
+                    <div class="loading-spinner"></div>
+                    <p>Loading weather data...</p>
+                </div>
+            </section>
+        </main>
+
+        <section class="about-section">
+            <div class="about-container">
+                <div>
+                    <h2 class="section-title">Our Vision</h2>
+                    <p>We believe that understanding the weather should be an elegant and insightful experience. Climatic was born from a desire to move beyond cluttered interfaces and create a tool that is both powerful for data analysis and a genuine pleasure to use.</p>
+                </div>
+                <div class="about-visual">
+                    <div class="vision-grid">
+                        <div class="vision-tile"></div>
+                        <div class="vision-tile"></div>
+                        <div class="vision-tile"></div>
+                        <div class="vision-tile"></div>
+                        <div class="vision-tile"></div>
+                        <div class="vision-tile"></div>
+                        <div class="vision-tile"></div>
+                        <div class="vision-tile"></div>
+                        <div class="vision-tile"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    <section class="team-section">
+        <h2 class="section-title">The Team</h2>
+        <div class="team-grid">
+            <div class="team-card feature-card">
+                <div class="team-img-container">
+                    <img src="assets/images/dharshan.jpg" 
+                        alt="Dharshan - Lead Developer" 
+                        loading="lazy"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="fallback-avatar" style="display: none; width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); border-radius: 50%; color: white; font-size: 2rem; font-weight: bold; align-items: center; justify-content: center;">D</div>
+                </div>
+                <h3>Dharshan</h3>
+                <p>Lead Developer & Backend Lead</p>
+                <div class="team-bio">
+                    <p>Expert in full-stack development and machine learning. Passionate about creating innovative weather prediction systems and user-friendly interfaces.</p>
+                </div>
+                <div class="social-links">
+                    <a href="https://linkedin.com/in/dharshan-dev" target="_blank" rel="noopener noreferrer" title="LinkedIn Profile">
+                        <i class="fab fa-linkedin"></i>
+                    </a>
+                    <a href="https://github.com/dharshan-dev" target="_blank" rel="noopener noreferrer" title="GitHub Profile">
+                        <i class="fab fa-github"></i>
+                    </a>
+                    <a href="https://twitter.com/dharshan_dev" target="_blank" rel="noopener noreferrer" title="Twitter Profile">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="mailto:dharshan@climatic.com" title="Email">
+                        <i class="fas fa-envelope"></i>
+                    </a>
+                </div>
+                
+            </div>
+
+            <div class="team-card feature-card">
+                <div class="team-img-container">
+                    <img src="assets/images/lalith.jpg" 
+                        alt="Lalith - UI/UX Designer" 
+                        loading="lazy"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="fallback-avatar" style="display: none; width: 100%; height: 100%; background: linear-gradient(135deg, var(--accent-color), var(--primary-color)); border-radius: 50%; color: white; font-size: 2rem; font-weight: bold; align-items: center; justify-content: center;">L</div>
+                </div>
+                <h3>Lalith</h3>
+                <p>UI/UX & Frontend Designer</p>
+                <div class="team-bio">
+                    <p>Creative designer focused on crafting beautiful and intuitive user experiences. Specializes in modern web design and interactive interfaces.</p>
+                </div>
+                <div class="social-links">
+                    <a href="https://linkedin.com/in/lalith-design" target="_blank" rel="noopener noreferrer" title="LinkedIn Profile">
+                        <i class="fab fa-linkedin"></i>
+                    </a>
+                    <a href="https://dribbble.com/lalith" target="_blank" rel="noopener noreferrer" title="Dribbble Profile">
+                        <i class="fab fa-dribbble"></i>
+                    </a>
+                    <a href="https://behance.net/lalith" target="_blank" rel="noopener noreferrer" title="Behance Portfolio">
+                        <i class="fab fa-behance"></i>
+                    </a>
+                    <a href="mailto:lalith@climatic.com" title="Email">
+                        <i class="fas fa-envelope"></i>
+                    </a>
+                </div>
+                
+            </div>
+
+            <div class="team-card feature-card">
+                <div class="team-img-container">
+                    <img src="assets/images/akshara.jpg" 
+                        alt="Akshara - API Integration" 
+                        loading="lazy"
+                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="fallback-avatar" style="display: none; width: 100%; height: 100%; background: linear-gradient(135deg, #dd6b20, var(--primary-color)); border-radius: 50%; color: white; font-size: 2rem; font-weight: bold; align-items: center; justify-content: center;">B</div>
+                </div>
+                <h3>Akshara</h3>
+                <p>API Integrations</p>
+                <div class="team-bio">
+                    <p>Data enthusiast with expertise in weather analytics and API development. Transforms complex meteorological data into actionable insights.</p>
+                </div>
+                <div class="social-links">
+                    <a href="https://linkedin.com/in/ben-carter-data" target="_blank" rel="noopener noreferrer" title="LinkedIn Profile">
+                        <i class="fab fa-linkedin"></i>
+                    </a>
+                    <a href="https://github.com/ben-carter" target="_blank" rel="noopener noreferrer" title="GitHub Profile">
+                        <i class="fab fa-github"></i>
+                    </a>
+                    <a href="https://kaggle.com/ben-carter" target="_blank" rel="noopener noreferrer" title="Kaggle Profile">
+                        <i class="fab fa-kaggle"></i>
+                    </a>
+                    <a href="mailto:ben@climatic.com" title="Email">
+                        <i class="fas fa-envelope"></i>
+                    </a>
+                </div>
+                
+            </div>
+        </div>
+    </section>
+        <script src="script.js"></script>
+    </body>
+    </html>
